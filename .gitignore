@@ -5,7 +5,7 @@ __pycache__/
 flower_data/
 # C extensions
 *.so
-
+pytorch
 # Distribution / packaging
 .Python
 env/
