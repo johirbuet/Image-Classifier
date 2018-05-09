@@ -7,7 +7,7 @@ from torchvision import models
 from collections import OrderedDict
 from PIL import Image
 import numpy as np
-
+import numbers
 
 def load_checkpoint(path):
     checkpoint = torch.load(path)
@@ -20,15 +20,32 @@ def load_checkpoint(path):
     else:
         model = models.densenet121()
 
-    classifier = nn.Sequential(OrderedDict(
+    if isinstance(hidden_units, numbers.Integral):
+        classifier = nn.Sequential(OrderedDict(
         [
             ('fc1', nn.Linear(1024, hidden_units)),
             ('relu', nn.ReLU()),
             ('fc2', nn.Linear(hidden_units, 102)),
             ('output', nn.LogSoftmax(dim=1))
         ]))
-
-    model.classifier = classifier
+        model.classifier = classifier
+    else:
+        d = OrderedDict()
+        layers = []
+        i = 1
+        prev = 1024
+        for j in range(0,len(hidden_units) -1):
+            hi = hidden_units[j]
+            layers.append(('fc'+i, nn.Linear(prev, hi)))
+            layers.append(('relu'+i, nn.ReLU()))
+            prev = hi
+            i = i + 1
+        layers.append(('fc'+i, nn.Linear(prev, hidden_units[len(hidden_units) - 1])))
+        layers.append(('output', nn.LogSoftmax(dim=1)))
+        classifier = nn.Sequential(OrderedDict(layers))
+        model.classifier = classifier
+                     
+    
 
     model.load_state_dict(checkpoint['state_dict'])
     class_to_idx = checkpoint['class_to_idx']
